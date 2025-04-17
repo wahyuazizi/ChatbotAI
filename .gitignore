@@ -1,0 +1,35 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+.env/
+.venv/
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+*.pyo
+db.sqlite3
+media/
+staticfiles/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Poetry
+poetry.lock
+
+# Node (kalau nanti pakai npm buat UI)
+node_modules/
+
+# Azure deployment files (kalau ada .azure/, bisa tambahin)
+.azure/
+
+# Others
+*.sqlite3
