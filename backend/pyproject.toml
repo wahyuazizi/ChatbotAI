@@ -1,16 +1,19 @@
 [project]
 name = "chatbotai-pkg"
 version = "0.1.0"
-description = "Project akhir/skripsi"
+description = "skripsi chatbot ai"
 authors = [
     {name = "Wahyu Azizi",email = "wahyuazizi03@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi (>=0.115.12,<0.116.0)"
 ]
 
+[tool.poetry]
+
+[tool.poetry.group.dev.dependencies]
+fastapi = "^0.115.12"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
