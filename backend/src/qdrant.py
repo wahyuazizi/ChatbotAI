@@ -28,6 +28,12 @@ client = QdrantClient(
     api_key=qdrant_api_key
 )
 
+# vector_store = Qdrant(
+#     client=client,
+#     collection_name=collection_name,
+#     embeddings=AzureOpenAIEmbeddings()
+# )
+
 # Try different initialization approaches for AzureOpenAI
 try:
     # Approach 1: Try with azure_endpoint
@@ -160,10 +166,10 @@ text_splitter = RecursiveCharacterTextSplitter(
     length_function=len
 )
 
-if __name__ == "__main__":
-    try:
-        create_collection(collection_name)
-        upload_website_to_collection("https://ft.hamzanwadi.ac.id/in/")
-        print("Process completed successfully!")
-    except Exception as e:
-        print(f"Process failed with error: {e}")
+# if __name__ == "__main__":
+#     try:
+#         create_collection(collection_name)
+#         upload_website_to_collection("https://ft.hamzanwadi.ac.id/in/")
+#         print("Process completed successfully!")
+#     except Exception as e:
+#         print(f"Process failed with error: {e}")
