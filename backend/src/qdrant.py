@@ -16,6 +16,7 @@ qdrant_url = config("QDRANT_URL")
 azure_openai_api_key = config("AZURE_OPENAI_API_KEY")
 azure_openai_endpoint = config("AZURE_OPENAI_ENDPOINT")
 collection_name = "Websites"
+user_agent = config("USER_AGENT", "ChatbotAI/Default")
 
 # Print the OpenAI package version to help diagnose
 import openai
