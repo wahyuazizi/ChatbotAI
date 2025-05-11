@@ -1,5 +1,5 @@
 import os
-from langchain_community.vectorstores import Qdrant
+from langchain_qdrant import QdrantVectorStore
 from langchain_openai import AzureOpenAIEmbeddings
 from openai import AzureOpenAI
 from azure.core.credentials import AzureKeyCredential
@@ -28,11 +28,19 @@ client = QdrantClient(
     api_key=qdrant_api_key
 )
 
-# vector_store = Qdrant(
-#     client=client,
-#     collection_name=collection_name,
-#     embeddings=AzureOpenAIEmbeddings()
-# )
+# Initialize AzureOpenAIEmbeddings for LangChain
+embeddings = AzureOpenAIEmbeddings(
+    azure_deployment="text-embedding-3-small",
+    openai_api_version="2024-02-01",
+    azure_endpoint=azure_openai_endpoint,
+    api_key=azure_openai_api_key
+)
+
+vector_store = QdrantVectorStore(
+    client=client,
+    collection_name=collection_name,
+    embedding=embeddings
+)
 
 # Try different initialization approaches for AzureOpenAI
 try:
@@ -67,13 +75,7 @@ except Exception as e1:
         azure_openai_client = AzureOpenAI()
         print("AzureOpenAI client initialized from environment variables")
 
-# Initialize AzureOpenAIEmbeddings for LangChain
-embeddings = AzureOpenAIEmbeddings(
-    azure_deployment="text-embedding-3-small",
-    openai_api_version="2024-02-01",
-    azure_endpoint=azure_openai_endpoint,
-    api_key=azure_openai_api_key
-)
+
 
 def get_embeddings(input_texts):
     """Generate embeddings using Azure OpenAI service."""
@@ -90,6 +92,7 @@ def get_embeddings(input_texts):
         # Fallback to using LangChain embeddings
         print("Falling back to LangChain embeddings")
         return embeddings.embed_documents(input_texts)
+
 
 def create_collection(collection_name):
     """Create or recreate the Qdrant collection."""
@@ -130,29 +133,31 @@ def upload_website_to_collection(url):
         for doc in docs:
             doc.metadata = {"source_url": url}
         
-        # Get text content to embed
-        text_list = [doc.page_content for doc in docs]
+        # # Get text content to embed
+        # text_list = [doc.page_content for doc in docs]
         
-        # Generate embeddings
-        embeddings_list = get_embeddings(text_list)
+        # # Generate embeddings
+        # embeddings_list = get_embeddings(text_list)
         
-        # Create vectors for Qdrant
-        vectors = []
-        for i, (doc, emb) in enumerate(zip(docs, embeddings_list)):
-            vectors.append(
-                models.PointStruct(
-                    id=i,
-                    vector=emb,
-                    payload={"text": doc.page_content, "metadata": doc.metadata}
-                )
-            )
+        # # Create vectors for Qdrant
+        # vectors = []
+        # for i, (doc, emb) in enumerate(zip(docs, embeddings_list)):
+        #     vectors.append(
+        #         models.PointStruct(
+        #             id=i,
+        #             vector=emb,
+        #             payload={"text": doc.page_content, "metadata": doc.metadata}
+        #         )
+        #     )
+
+        # # Upload vectors to Qdrant
+        # print(f"Uploading {len(vectors)} vectors to Qdrant...")
+        # client.upsert(
+        #     collection_name=collection_name,
+        #     points=vectors
+        # )
+        vector_store.add_documents(docs)
         
-        # Upload vectors to Qdrant
-        print(f"Uploading {len(vectors)} vectors to Qdrant...")
-        client.upsert(
-            collection_name=collection_name,
-            points=vectors
-        )
         
         print(f"Website {url} uploaded to collection {collection_name}")
     except Exception as e:
@@ -166,10 +171,10 @@ text_splitter = RecursiveCharacterTextSplitter(
     length_function=len
 )
 
-# if __name__ == "__main__":
-#     try:
-#         create_collection(collection_name)
-#         upload_website_to_collection("https://ft.hamzanwadi.ac.id/in/")
-#         print("Process completed successfully!")
-#     except Exception as e:
-#         print(f"Process failed with error: {e}")
+if __name__ == "__main__":
+    try:
+        create_collection(collection_name)
+        upload_website_to_collection("https://ft.hamzanwadi.ac.id/in/")
+        print("Process completed successfully!")
+    except Exception as e:
+        print(f"Process failed with error: {e}")
