@@ -156,10 +156,14 @@ def upload_website_to_collection(url):
         #     collection_name=collection_name,
         #     points=vectors
         # )
-        vector_store.add_documents(docs)
-        
-        
+        vector_store.add_documents(docs)      
         print(f"Website {url} uploaded to collection {collection_name}")
+        return {
+            "url": url,
+            "original_docs": len(loader.load()),
+            "chunks_uploaded": len(docs),
+            "status": "success"
+        }
     except Exception as e:
         print(f"Error uploading website: {e}")
         raise
