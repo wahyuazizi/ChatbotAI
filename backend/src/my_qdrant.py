@@ -78,7 +78,9 @@ except Exception as e1:
 
 
 def get_embeddings(input_texts):
-    """Generate embeddings using Azure OpenAI service."""
+    """
+    Generate embeddings using Azure OpenAI service.
+    """
     print(f"Generating embeddings for {len(input_texts)} texts")
     try:
         response = azure_openai_client.embeddings.create(
@@ -95,7 +97,9 @@ def get_embeddings(input_texts):
 
 
 def create_collection(collection_name):
-    """Create or recreate the Qdrant collection."""
+    """
+    Create or recreate the Qdrant collection.
+    """
     print(f"Creating collection {collection_name}...")
     try:
         # Check if collection exists and delete if it does
