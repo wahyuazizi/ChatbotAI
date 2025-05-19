@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -11,8 +10,7 @@ const api = axios.create({
 
 export function TextareaWithButton() {
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [documents, setDocuments] = useState([]);
+  const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,14 +31,13 @@ export function TextareaWithButton() {
     // Save current question and clear input
     const currentQuestion = question;
     setQuestion("");
-
     setLoading(true);
     setError("");
 
     try {
-      console.log("Sending request with message:", question);
+      console.log("Sending request with message:", currentQuestion);
 
-      const response = await api.post("/chat", { message: question });
+      const response = await api.post("/chat", { message: currentQuestion });
       console.log("Received response:", response.data);
 
       // Handle the answer text
@@ -61,13 +58,6 @@ export function TextareaWithButton() {
           ...prev, 
           { type: 'bot', content: "No answer received", documents: [] }
         ]);
-      }
-
-      // Handle the documents
-      if (response.data.documents && Array.isArray(response.data.documents)) {
-        setDocuments(response.data.documents);
-      } else {
-        setDocuments([]);
       }
     } catch (err) {
       console.error("Error sending message:", err);
@@ -117,69 +107,113 @@ export function TextareaWithButton() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 pb-20"> {/* Padding bawah untuk fixed input */}
-      {/* Pesan Error */}
+    <div className="max-w-2xl mx-auto p-4 pb-20">
+      {/* Error Banner (if needed outside of chat) */}
       {error && (
-        <div className="text-red-500 w-full mb-4 p-2 border border-red-300 rounded">
-          {error}
+        <div className="alert alert-error mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Jawaban */}
-      {answer && (
-        <div className="w-full mb-4 p-4 border rounded ">
-          <h2 className="text-lg font-semibold mb-2">Jawaban</h2>
-          <p className="text-left whitespace-pre-wrap">{answer}</p>
+      {/* Chat History */}
+      <div className="mb-16 flex flex-col space-y-3">
+        {/* Welcome Message */}
+        {chatHistory.length === 0 && (
+          <div className="text-center p-6 text-gray-500">
+            <h1 style={{ fontFamily: 'Faculty Glyphic, sans-serif' }} className="text-3xl font-bold mb-2">Selamat Datang!</h1>
+            
+            <h3 className='font-semibold text-xl'>Tanyakan sesuatu tentang Universitas Hamzanwadi</h3>
+          </div>
+        )}
+        
+        {/* Messages */}
+        {chatHistory.map((msg, index) => (
+          <div key={index} className={`chat ${msg.type === 'user' ? 'chat-end' : 'chat-start'}`}>
+            <div className={`chat-bubble rounded-2xl ${
+              msg.type === 'error' 
+                ? 'chat-bubble-error' 
+                : msg.type === 'user' 
+                  ? 'chat-bubble-success' 
+                  : ''
+            }`}>
+              <div className="whitespace-pre-wrap text-left">{msg.content}</div>
+              
+              {/* Show documents sources if available */}
+              {msg.documents && msg.documents.length > 0 && (
+                <div className="mt-2 opacity-70 text-xs">
+                  <details className="collapse collapse-arrow bg-base-200 bg-opacity-40">
+                    <summary className="collapse-title py-1 px-2 min-h-0">Sumber Informasi</summary>
+                    <div className="collapse-content text-left">
+                      <ul className="list-disc list-inside">
+                        {msg.documents.map((doc, idx) => (
+                          <li key={idx} className="text-xs">
+                            {formatDocumentContent(doc)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </details>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        
+        {/* Loading indicator as a message bubble */}
+        {loading && (
+          <div className="chat chat-start">
+            <div className="chat-bubble">
+              <div className="flex items-center gap-2">
+                <span className="loading loading-dots loading-sm"></span>
+                <span>Memikirkan jawaban...</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-          {/* {documents.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-md font-semibold mb-1">Sumber Informasi:</h3>
-          <ul className="list-disc pl-5">
-            {documents.map((doc, index) => (
-              <li key={index} className="text-sm text-gray-700">
-                {formatDocumentContent(doc)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )} */}
-        </div>
-      )}
+      {/* Input with button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-base-100 shadow-md">
+        <div className="max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit} className="relative ">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Tanyakan sesuatu tentang Universitas Hamzanwadi..."
+              disabled={loading}
+              className="textarea textarea-bordered border-2 w-full pr-14 min-h-12 resize-none  rounded-xl"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+            />
+            <button
+              type="submit"
+              disabled={loading || !question.trim()}
+              className="btn btn-circle btn-primary absolute right-2 bottom-2"
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+          </form>
 
-      {/* Input dengan tombol di dalamnya - versi alternatif */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 shadow-md">
-        <div className="max-w-2xl mx-auto relative rounded-xl border focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Tanyakan sesuatu tentang Universitas Hamzanwadi..."
-            disabled={loading}
-            className="min-h-10 max-h-60 w-full p-3 pr-16 border-none focus:outline-none resize-none rounded-xl"
-          />
-
-          <button
-            type='submit'
-            onClick={handleSubmit}
-            disabled={loading}
-            className="absolute right-2 bottom-2.5 p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-          >
-            {loading ?
-              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg> :
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
-              </svg>
-            }
-          </button>
+          {/* Footer */}
+          <footer className="w-full py-2">
+            <div className="text-center text-sm text-gray-500">
+              Made with ❤️ and Dedication by Wahyu Azizi
+            </div>
+          </footer>
         </div>
-      {/* Footer di bagian bawah layar */}
-      <footer className="w-full py-2">
-        <div className="max-w-2xl mx-auto text-center text-sm text-gray-500">
-          Made with ❤️ and Dedication by Wahyu Azizi
-        </div>
-      </footer>
       </div>
     </div>
   );
