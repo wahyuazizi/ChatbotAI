@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import univLogo from './assets/logo.png'
 import './App.css'
 import './index.css'
 import { TextareaWithButton } from './MessageForm'
@@ -9,9 +8,10 @@ function App() {
 
   return (
     <>
-      <div>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
+      <div className='item-center flex justify-center'>
+        
+        <a href="https://hamzanwadi.ac.id" target="_blank">
+          <img src={univLogo} className="h-20" alt="Hamzanwadi logo" />
         </a>
       </div>
       <TextareaWithButton />
