@@ -6,7 +6,6 @@ import './index.css'
 import { TextareaWithButton } from './MessageForm'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>

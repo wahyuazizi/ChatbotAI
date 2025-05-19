@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 
 const api = axios.create({
@@ -13,6 +13,57 @@ export function TextareaWithButton() {
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Ubah dari chatContainerRef menjadi messagesEndRef
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    // Add a CSS rule to show scrollbars without layout shift
+    const style = document.createElement('style');
+    style.textContent = `
+      html {
+        overflow-y: scroll;
+      }
+      
+      body {
+        overflow-x: hidden;
+        padding-right: 0 !important; /* Prevent padding shifts */
+      }
+      
+      /* For Firefox */
+      * {
+        scrollbar-width: thin;
+      }
+      
+      /* For Webkit browsers */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background-color: rgba(155, 155, 155, 0.5);
+        border-radius: 20px;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // Perbaikan auto-scroll menggunakan scrollIntoView
+  useEffect(() => {
+    // Gunakan timeout untuk memastikan DOM telah diupdate sebelum scroll
+    const timeoutId = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [chatHistory, loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,10 +75,10 @@ export function TextareaWithButton() {
 
     // Add user message to chat history immediately
     setChatHistory(prev => [
-      ...prev, 
+      ...prev,
       { type: 'user', content: question }
     ]);
-    
+
     // Save current question and clear input
     const currentQuestion = question;
     setQuestion("");
@@ -44,18 +95,18 @@ export function TextareaWithButton() {
       if (response.data.answer) {
         // Add bot response to chat history
         setChatHistory(prev => [
-          ...prev, 
-          { 
-            type: 'bot', 
+          ...prev,
+          {
+            type: 'bot',
             content: response.data.answer,
-            documents: response.data.documents && Array.isArray(response.data.documents) 
-              ? response.data.documents 
+            documents: response.data.documents && Array.isArray(response.data.documents)
+              ? response.data.documents
               : []
           }
         ]);
       } else {
         setChatHistory(prev => [
-          ...prev, 
+          ...prev,
           { type: 'bot', content: "No answer received", documents: [] }
         ]);
       }
@@ -64,7 +115,7 @@ export function TextareaWithButton() {
 
       // Provide better error feedback
       let errorMessage = "An unknown error occurred";
-      
+
       if (err.response) {
         // The server responded with an error status
         errorMessage = err.response.data.error || 'Unknown server error';
@@ -82,7 +133,7 @@ export function TextareaWithButton() {
 
       // Add error message to chat
       setChatHistory(prev => [
-        ...prev, 
+        ...prev,
         { type: 'error', content: errorMessage }
       ]);
     } finally {
@@ -118,29 +169,28 @@ export function TextareaWithButton() {
         </div>
       )}
 
-      {/* Chat History */}
+      {/* Chat History - tanpa ref pada container utama */}
       <div className="mb-16 flex flex-col space-y-3">
         {/* Welcome Message */}
         {chatHistory.length === 0 && (
           <div className="text-center p-6 text-gray-500">
             <h1 style={{ fontFamily: 'Faculty Glyphic, sans-serif' }} className="text-3xl font-bold mb-2">Selamat Datang!</h1>
-            
+
             <h3 className='font-semibold text-xl'>Tanyakan sesuatu tentang Universitas Hamzanwadi</h3>
           </div>
         )}
-        
+
         {/* Messages */}
         {chatHistory.map((msg, index) => (
           <div key={index} className={`chat ${msg.type === 'user' ? 'chat-end' : 'chat-start'}`}>
-            <div className={`chat-bubble rounded-2xl ${
-              msg.type === 'error' 
-                ? 'chat-bubble-error' 
-                : msg.type === 'user' 
-                  ? 'chat-bubble-success' 
+            <div className={`chat-bubble rounded-2xl ${msg.type === 'error'
+                ? 'chat-bubble-error'
+                : msg.type === 'user'
+                  ? 'chat-bubble-success'
                   : ''
-            }`}>
+              }`}>
               <div className="whitespace-pre-wrap text-left">{msg.content}</div>
-              
+
               {/* Show documents sources if available */}
               {msg.documents && msg.documents.length > 0 && (
                 <div className="mt-2 opacity-70 text-xs">
@@ -161,7 +211,7 @@ export function TextareaWithButton() {
             </div>
           </div>
         ))}
-        
+
         {/* Loading indicator as a message bubble */}
         {loading && (
           <div className="chat chat-start">
@@ -173,18 +223,21 @@ export function TextareaWithButton() {
             </div>
           </div>
         )}
+
+        {/* Elemen kosong untuk target scrollIntoView */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input with button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-base-100 shadow-md">
         <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit} className="relative ">
+          <form onSubmit={handleSubmit} className="relative">
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Tanyakan sesuatu tentang Universitas Hamzanwadi..."
               disabled={loading}
-              className="textarea textarea-bordered border-2 w-full pr-14 min-h-12 resize-none  rounded-xl"
+              className="textarea textarea-bordered border-2 w-full pr-14 min-h-12 resize-none rounded-2xl"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -195,7 +248,7 @@ export function TextareaWithButton() {
             <button
               type="submit"
               disabled={loading || !question.trim()}
-              className="btn btn-circle btn-primary absolute right-2 bottom-2"
+              className="btn btn-soft btn-success absolute right-2 bottom-2 rounded-2xl"
             >
               {loading ? (
                 <span className="loading loading-spinner loading-sm"></span>
